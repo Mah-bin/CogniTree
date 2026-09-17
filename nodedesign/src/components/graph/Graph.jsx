@@ -46,9 +46,9 @@ function GraphInner({ curriculumNodes = [], selectedNodeId, onSelectNode, diagno
   // Inject diagnostic scan states onto React Flow nodes
   const nodes = useMemo(() => {
     return baseFlow.nodes.map((node) => {
-      const isScanningTarget = node.id === 'quadratic' && stage === 'scanning';
+      const isScanningTarget = node.id === gapPath[0] && stage === 'scanning';
       const isGapFoundNode =
-        node.id === 'fractions' && (stage === 'gap-found' || stage === 'recommendation');
+        node.id === gapPath[gapPath.length - 1] && (stage === 'gap-found' || stage === 'recommendation');
       const isOnPath = revealedSet.has(node.id);
       const isDimmed = stage !== 'idle' && stage !== 'scanning' && !revealedSet.has(node.id);
 
@@ -63,7 +63,7 @@ function GraphInner({ curriculumNodes = [], selectedNodeId, onSelectNode, diagno
         },
       };
     });
-  }, [baseFlow.nodes, stage, revealedSet]);
+  }, [baseFlow.nodes, stage, revealedSet, gapPath]);
 
   // Inject diagnostic path highlighting onto React Flow edges
   const edges = useMemo(() => {

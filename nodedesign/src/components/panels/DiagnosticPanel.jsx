@@ -11,7 +11,14 @@ import {
   X,
 } from 'lucide-react';
 
-export default function DiagnosticPanel({ onResetScan, onStartDetour }) {
+export default function DiagnosticPanel({ onResetScan, onStartDetour, diagnosis, allNodes }) {
+  // Defensive fallbacks in case it opens before diagnosis is ready
+  const gapNodeId = diagnosis?.gapNode;
+  const failedNodeId = diagnosis?.failedNode;
+  
+  const gapNode = allNodes?.find(n => n.id === gapNodeId) || { title: 'Unknown Topic' };
+  const failedNode = allNodes?.find(n => n.id === failedNodeId) || { title: 'Unknown Topic' };
+
   return (
     <aside className="w-[340px] shrink-0 h-full bg-slate-900/95 backdrop-blur-xl border-l border-red-500/40 p-5 text-slate-100 flex flex-col justify-between overflow-y-auto select-none shadow-2xl shadow-red-950/80 transition-all duration-300">
       <div className="space-y-5">
@@ -43,7 +50,7 @@ export default function DiagnosticPanel({ onResetScan, onStartDetour }) {
             FOUNDATIONAL GAP DETECTED
           </div>
           <h2 className="text-base font-bold text-slate-100">
-            Likely issue: <span className="text-red-400">Fraction Operations</span>
+            Likely issue: <span className="text-red-400">{gapNode.title}</span>
           </h2>
           <p className="text-[11px] text-slate-300 leading-relaxed pt-1">
             Cognitive analysis detected a root prerequisite block affecting higher-level mastery.
@@ -59,15 +66,11 @@ export default function DiagnosticPanel({ onResetScan, onStartDetour }) {
           <ul className="space-y-2 text-xs">
             <li className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/60 text-slate-200">
               <RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>6 failed attempts</span>
-            </li>
-            <li className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/60 text-slate-200">
-              <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>High time-to-mastery</span>
+              <span>Failed on {failedNode.title}</span>
             </li>
             <li className="flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/60 text-slate-200">
               <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-              <span>Failed prerequisite dependency</span>
+              <span className="line-clamp-2">{diagnosis?.reason || 'Failed prerequisite dependency'}</span>
             </li>
           </ul>
         </div>
@@ -79,7 +82,7 @@ export default function DiagnosticPanel({ onResetScan, onStartDetour }) {
             Recommended Plan
           </span>
           <p className="text-xs text-slate-300 leading-normal">
-            Complete a targeted 5-minute refresher on Fraction Operations before proceeding to Quadratic Functions.
+            Complete a targeted 5-minute refresher on {gapNode.title} before proceeding to {failedNode.title}.
           </p>
         </div>
       </div>
