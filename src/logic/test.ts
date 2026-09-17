@@ -20,7 +20,7 @@ const result = handleAnswer(initialState, 'node-area', 'opt-2');
 
 // 3. See the results
 console.log("Diagnostic Message Returned to UI:");
-console.log(`> "${result.diagnosticMessage}"\n`);
+console.log(`> "${result.diagnosticMessage}"\n`);   
 
 console.log("Updated Status of Multiplication Node (Should now be 'gap' so the UI turns it red):");
 console.log(`> Status: ${result.newState.nodes.find(n => n.id === 'node-multiplication')?.status}`);
