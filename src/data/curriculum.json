@@ -1,0 +1,61 @@
+{
+  "nodes": [
+    {
+      "id": "node-single-bracket",
+      "title": "Factorising into a Single Bracket",
+      "status": "mastered",
+      "position": { "x": 100, "y": 100 }
+    },
+    {
+      "id": "node-double-bracket",
+      "title": "Factorising into Double Brackets",
+      "status": "unlocked",
+      "position": { "x": 400, "y": 100 }
+    },
+    {
+      "id": "node-algebraic-fractions",
+      "title": "Simplifying Algebraic Fractions",
+      "status": "locked",
+      "position": { "x": 700, "y": 100 }
+    }
+  ],
+  "edges": [
+    { "id": "edge-1", "source": "node-single-bracket", "target": "node-double-bracket" },
+    { "id": "edge-2", "source": "node-double-bracket", "target": "node-algebraic-fractions" }
+  ],
+  "questions": [
+    {
+      "id": "q-single-1",
+      "nodeId": "node-single-bracket",
+      "text": "Factorise this expression, if possible: p^2 - 99p",
+      "options": [
+        { "id": "opt-1", "text": "(p+9)(p-9)", "isCorrect": false, "misconceptionNodeId": null },
+        { "id": "opt-2", "text": "(p+3√11)(p-3√11)", "isCorrect": false, "misconceptionNodeId": null },
+        { "id": "opt-3", "text": "p(p-99)", "isCorrect": true, "misconceptionNodeId": null },
+        { "id": "opt-4", "text": "Does not factorise", "isCorrect": false, "misconceptionNodeId": null }
+      ]
+    },
+    {
+      "id": "q-double-1",
+      "nodeId": "node-double-bracket",
+      "text": "Factorise the following expression: 3x^2 + 5x + 2",
+      "options": [
+        { "id": "opt-1", "text": "(3x+2)(3x+1)", "isCorrect": false, "misconceptionNodeId": "node-single-bracket" },
+        { "id": "opt-2", "text": "(3x+2)(x+1)", "isCorrect": true, "misconceptionNodeId": null },
+        { "id": "opt-3", "text": "Cannot be factorised", "isCorrect": false, "misconceptionNodeId": "node-single-bracket" },
+        { "id": "opt-4", "text": "(3x+1)(x+2)", "isCorrect": false, "misconceptionNodeId": null }
+      ]
+    },
+    {
+      "id": "q-fraction-1",
+      "nodeId": "node-algebraic-fractions",
+      "text": "Simplify the following, if possible: (m^2 + 2m - 3) / (m - 3)",
+      "options": [
+        { "id": "opt-1", "text": "m+1", "isCorrect": false, "misconceptionNodeId": "node-double-bracket" },
+        { "id": "opt-2", "text": "m+2", "isCorrect": false, "misconceptionNodeId": null },
+        { "id": "opt-3", "text": "m-1", "isCorrect": false, "misconceptionNodeId": "node-double-bracket" },
+        { "id": "opt-4", "text": "Does not simplify", "isCorrect": true, "misconceptionNodeId": null }
+      ]
+    }
+  ]
+}
