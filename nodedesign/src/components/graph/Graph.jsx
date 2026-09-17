@@ -14,9 +14,10 @@ const nodeTypes = {
   concept: ConceptNode,
 };
 
-function GraphInner({ curriculumNodes = [], selectedNodeId, onSelectNode, diagnosticState }) {
+function GraphInner({ curriculumNodes = [], selectedNodeId, onSelectNode, diagnosticState, theme = 'dark' }) {
   const { stage = 'idle', gapPath = [], revealedCount = 0 } = diagnosticState || {};
   const { fitView } = useReactFlow();
+  const isLight = theme === 'light';
 
   // Map raw nodes using shared adapter mapper
   const baseFlow = useMemo(() => {
@@ -93,9 +94,15 @@ function GraphInner({ curriculumNodes = [], selectedNodeId, onSelectNode, diagno
         };
       }
 
-      return edge;
+      return {
+        ...edge,
+        style: {
+          ...edge.style,
+          stroke: isLight ? '#94a3b8' : '#334155',
+        },
+      };
     });
-  }, [baseFlow.edges, stage, revealedSet]);
+  }, [baseFlow.edges, stage, revealedSet, isLight]);
 
   const handleNodeClick = useCallback(
     (event, node) => {
@@ -107,7 +114,7 @@ function GraphInner({ curriculumNodes = [], selectedNodeId, onSelectNode, diagno
   );
 
   return (
-    <div className="w-full h-full bg-slate-950 pt-14">
+    <div className={`w-full h-full pt-14 transition-colors duration-300 ${isLight ? 'bg-slate-100' : 'bg-slate-950'}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -115,7 +122,12 @@ function GraphInner({ curriculumNodes = [], selectedNodeId, onSelectNode, diagno
         nodeTypes={nodeTypes}
         fitView
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={16}
+          size={1}
+          color={isLight ? '#cbd5e1' : '#334155'}
+        />
         <Controls />
       </ReactFlow>
     </div>
