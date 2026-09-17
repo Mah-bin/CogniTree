@@ -7,11 +7,12 @@ import DiagnosticPanel from './components/panels/DiagnosticPanel';
 import CurriculumNav from './components/panels/CurriculumNav';
 import TopBar from './components/ui/TopBar';
 import LoginModal from './components/auth/LoginModal';
+import QuizModal from './components/QuizModal';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 import { useDiagnosticScan } from './hooks/useDiagnosticScan';
 import { useCurriculum } from './core/CurriculumContext';
 
 export default function App() {
-  // Meera's UI State
   const [view, setView] = useState(() => {
     if (window.location.hash === '#node-design') return 'nodedesign';
     return 'hero';
@@ -33,17 +34,17 @@ export default function App() {
   });
 
   const [selectedNodeId, setSelectedNodeId] = useState(null);
-  
-  // Person 1's Core Logic (Our Backend)
+  const [quizNodeId, setQuizNodeId] = useState(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+
   const { graph, progress, diagnoses, answer } = useCurriculum();
-  
-  // Map Person 1's logic into Person 2's UI structure
+
   const rawNodes = useMemo(() => {
     return graph.nodes.map(n => {
       const p = progress[n.id];
       let mastery = 0;
       let uiStatus = p?.status || 'locked';
-      
+
       if (uiStatus === 'mastered') mastery = 100;
       else if (uiStatus === 'in_progress') mastery = p.correct > 0 ? 50 : 0;
       else if (uiStatus === 'gap') mastery = 20;
@@ -62,7 +63,6 @@ export default function App() {
     });
   }, [graph, progress]);
 
-  // Meera's Event Handlers
   useEffect(() => {
     localStorage.setItem('cognitree_theme', theme);
     if (theme === 'dark') {
@@ -115,7 +115,6 @@ export default function App() {
     setIsLoginOpen(true);
   };
 
-  // Handle Diagnostic Animation State (Our Logic)
   const latestDiagnosis = diagnoses[0] || null;
   const diagnosticScan = useDiagnosticScan(latestDiagnosis?.path || []);
   const { stage, runScan, resetScan } = diagnosticScan;
@@ -136,7 +135,6 @@ export default function App() {
 
   const selectedNode = rawNodes.find((n) => n.id === selectedNodeId) || null;
 
-  // Demo helper: Simulate a wrong answer on the Area node
   const handleSimulateQuiz = () => {
     answer('area', 'area.q1', { id: 'b', text: '10', correct: false, blame: 'multiplication', reason: 'Added instead of multiplied' });
   };
@@ -158,7 +156,6 @@ export default function App() {
             theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
           }`}
         >
-          {/* Left Curriculum Navigation Sidebar */}
           <CurriculumNav
             topics={rawNodes}
             selectedNodeId={selectedNodeId}
@@ -166,10 +163,9 @@ export default function App() {
             theme={theme}
           />
 
-          {/* Middle Graph Area */}
           <main className="flex-1 h-full relative overflow-hidden">
             <TopBar
-              studentName={user ? user.name : "Hackathon Demo"}
+              studentName={user ? user.name : 'Hackathon Demo'}
               overallMastery={overallMastery}
               stage={stage}
               onRunScan={handleSimulateQuiz}
@@ -180,6 +176,7 @@ export default function App() {
               user={user}
               onOpenLogin={openSignIn}
               onLogout={handleLogout}
+              onOpenAnalytics={() => setShowAnalytics(true)}
             />
             <Graph
               curriculumNodes={rawNodes}
@@ -190,7 +187,6 @@ export default function App() {
             />
           </main>
 
-          {/* Right Panel: DiagnosticPanel on recommendation stage, InsightPanel otherwise */}
           {stage === 'recommendation' ? (
             <DiagnosticPanel
               onResetScan={resetScan}
@@ -205,12 +201,31 @@ export default function App() {
               allNodes={rawNodes}
               onClose={() => setSelectedNodeId(null)}
               theme={theme}
+              onStartQuiz={selectedNode ? () => setQuizNodeId(selectedNode.id) : undefined}
             />
+          )}
+
+          {quizNodeId && (
+            <QuizModal
+              nodeId={quizNodeId}
+              onClose={() => setQuizNodeId(null)}
+            />
+          )}
+
+          {showAnalytics && (
+            <div className="absolute inset-0 z-30 bg-slate-950/70 backdrop-blur-sm p-6 flex items-center justify-center">
+              <AnalyticsDashboard
+                onClose={() => setShowAnalytics(false)}
+                onSelectNode={(nodeId) => {
+                  setSelectedNodeId(nodeId);
+                  setShowAnalytics(false);
+                }}
+              />
+            </div>
           )}
         </div>
       )}
 
-      {/* Authentication Login / Sign Up Modal */}
       <LoginModal
         isOpen={isLoginOpen}
         initialMode={loginModalMode}

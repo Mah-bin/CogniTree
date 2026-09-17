@@ -208,37 +208,6 @@ export function emptyProgress(graph: Graph): Progress {
       blamedBy: null,
     };
   }
-
-  // --- HACKATHON DEMO OVERRIDE ---
-  // Seed the state so that the student has already mastered the basics,
-  // making 'Area' legitimately 'available' for our simulated failure.
-  if (p['counting']) {
-    p['counting'].status = 'mastered';
-    p['counting'].correct = 2;
-    p['counting'].attempts = 2;
-  }
-  if (p['addition']) {
-    p['addition'].status = 'mastered';
-    p['addition'].correct = 2;
-    p['addition'].attempts = 2;
-  }
-  if (p['multiplication']) {
-    p['multiplication'].status = 'mastered';
-    p['multiplication'].correct = 2;
-    p['multiplication'].attempts = 2;
-  }
-  if (p['subtraction']) {
-    p['subtraction'].status = 'mastered';
-    p['subtraction'].correct = 2;
-    p['subtraction'].attempts = 2;
-  }
-  if (p['division']) {
-    p['division'].status = 'available';
-  }
-  if (p['area']) {
-    p['area'].status = 'available';
-  }
-  
   return p;
 }
 

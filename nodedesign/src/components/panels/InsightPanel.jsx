@@ -54,7 +54,7 @@ const statusBadgeStyles = {
   },
 };
 
-export default function InsightPanel({ selectedNode, allNodes = [], onClose, theme = 'dark' }) {
+export default function InsightPanel({ selectedNode, allNodes = [], onClose, theme = 'dark', onStartQuiz }) {
   const isLight = theme === 'light';
 
   if (!selectedNode) {
@@ -158,6 +158,21 @@ export default function InsightPanel({ selectedNode, allNodes = [], onClose, the
           >
             {desc}
           </div>
+        )}
+
+        {onStartQuiz && (
+          <button
+            type="button"
+            onClick={onStartQuiz}
+            className={`w-full inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
+              isLight
+                ? 'border-sky-300 bg-sky-100 text-sky-700 hover:bg-sky-200'
+                : 'border-sky-500/40 bg-sky-500/10 text-sky-100 hover:bg-sky-500/20'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Attend Quiz
+          </button>
         )}
 
         {/* Mastery Section */}
