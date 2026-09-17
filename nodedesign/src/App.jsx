@@ -8,13 +8,10 @@ import CurriculumNav from './components/panels/CurriculumNav';
 import TopBar from './components/ui/TopBar';
 import LoginModal from './components/auth/LoginModal';
 import { useDiagnosticScan } from './hooks/useDiagnosticScan';
-import { mockCurriculumData } from './data/mockData';
-import { personOneContractData } from './data/personOneMock';
-import { adaptPersonOneData } from './data/adapter';
-
-const USE_MOCK = true;
+import { useCurriculum } from './core/CurriculumContext';
 
 export default function App() {
+  // Meera's UI State
   const [view, setView] = useState(() => {
     if (window.location.hash === '#node-design') return 'nodedesign';
     return 'hero';
@@ -36,9 +33,36 @@ export default function App() {
   });
 
   const [selectedNodeId, setSelectedNodeId] = useState(null);
-  const diagnosticScan = useDiagnosticScan();
-  const { stage, runScan, resetScan } = diagnosticScan;
+  
+  // Person 1's Core Logic (Our Backend)
+  const { graph, progress, diagnoses, answer } = useCurriculum();
+  
+  // Map Person 1's logic into Person 2's UI structure
+  const rawNodes = useMemo(() => {
+    return graph.nodes.map(n => {
+      const p = progress[n.id];
+      let mastery = 0;
+      let uiStatus = p?.status || 'locked';
+      
+      if (uiStatus === 'mastered') mastery = 100;
+      else if (uiStatus === 'in_progress') mastery = p.correct > 0 ? 50 : 0;
+      else if (uiStatus === 'gap') mastery = 20;
 
+      if (uiStatus === 'available' || uiStatus === 'in_progress') uiStatus = 'current';
+
+      return {
+        ...n,
+        prerequisites: n.prereqs,
+        mastery,
+        status: uiStatus,
+        attempts: p?.attempts || 0,
+        timeSpent: p?.msOnNode ? p.msOnNode / 1000 : 0,
+        difficulty: 'medium'
+      };
+    });
+  }, [graph, progress]);
+
+  // Meera's Event Handlers
   useEffect(() => {
     localStorage.setItem('cognitree_theme', theme);
     if (theme === 'dark') {
@@ -48,9 +72,7 @@ export default function App() {
     }
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
@@ -64,11 +86,8 @@ export default function App() {
 
   useEffect(() => {
     const handleHashChange = () => {
-      if (window.location.hash === '#node-design') {
-        setView('nodedesign');
-      } else if (window.location.hash === '#hero') {
-        setView('hero');
-      }
+      if (window.location.hash === '#node-design') setView('nodedesign');
+      else if (window.location.hash === '#hero') setView('hero');
     };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
@@ -96,29 +115,31 @@ export default function App() {
     setIsLoginOpen(true);
   };
 
-  // Load curriculum dataset based on USE_MOCK flag
-  const activeDataset = useMemo(() => {
-    if (USE_MOCK) {
-      return {
-        rawNodes: mockCurriculumData,
-        student: { name: user ? user.name : 'Alex Rivera', id: user ? user.id || 'alex-101' : 'alex-101' },
-      };
+  // Handle Diagnostic Animation State (Our Logic)
+  const latestDiagnosis = diagnoses[0] || null;
+  const diagnosticScan = useDiagnosticScan(latestDiagnosis?.path || []);
+  const { stage, runScan, resetScan } = diagnosticScan;
+  const lastScannedRef = React.useRef(null);
+
+  useEffect(() => {
+    if (latestDiagnosis && latestDiagnosis !== lastScannedRef.current && stage === 'idle') {
+      lastScannedRef.current = latestDiagnosis;
+      runScan();
     }
-    const adapted = adaptPersonOneData(personOneContractData);
-    return {
-      rawNodes: adapted.rawNodes,
-      student: { name: user ? user.name : adapted.student.name, id: adapted.student.id },
-    };
-  }, [user]);
+  }, [latestDiagnosis, stage, runScan]);
 
-  // Compute dynamic overall mastery percentage across all nodes
   const overallMastery = useMemo(() => {
-    if (!activeDataset.rawNodes || activeDataset.rawNodes.length === 0) return 0;
-    const total = activeDataset.rawNodes.reduce((acc, n) => acc + (n.mastery || 0), 0);
-    return Math.round(total / activeDataset.rawNodes.length);
-  }, [activeDataset.rawNodes]);
+    if (!rawNodes || rawNodes.length === 0) return 0;
+    const total = rawNodes.reduce((acc, n) => acc + (n.mastery || 0), 0);
+    return Math.round(total / rawNodes.length);
+  }, [rawNodes]);
 
-  const selectedNode = activeDataset.rawNodes.find((n) => n.id === selectedNodeId) || null;
+  const selectedNode = rawNodes.find((n) => n.id === selectedNodeId) || null;
+
+  // Demo helper: Simulate a wrong answer on the Area node
+  const handleSimulateQuiz = () => {
+    answer('area', 'area.q1', { id: 'b', text: '10', correct: false, blame: 'multiplication', reason: 'Added instead of multiplied' });
+  };
 
   return (
     <>
@@ -139,7 +160,7 @@ export default function App() {
         >
           {/* Left Curriculum Navigation Sidebar */}
           <CurriculumNav
-            topics={activeDataset.rawNodes}
+            topics={rawNodes}
             selectedNodeId={selectedNodeId}
             onSelectTopic={setSelectedNodeId}
             theme={theme}
@@ -148,10 +169,10 @@ export default function App() {
           {/* Middle Graph Area */}
           <main className="flex-1 h-full relative overflow-hidden">
             <TopBar
-              studentName={activeDataset.student.name}
+              studentName={user ? user.name : "Hackathon Demo"}
               overallMastery={overallMastery}
               stage={stage}
-              onRunScan={runScan}
+              onRunScan={handleSimulateQuiz}
               onResetScan={resetScan}
               onBackToHero={handleBackToHero}
               theme={theme}
@@ -161,10 +182,10 @@ export default function App() {
               onLogout={handleLogout}
             />
             <Graph
-              curriculumNodes={activeDataset.rawNodes}
+              curriculumNodes={rawNodes}
               selectedNodeId={selectedNodeId}
               onSelectNode={setSelectedNodeId}
-              diagnosticState={diagnosticScan}
+              diagnosticState={{ ...diagnosticScan, gapPath: latestDiagnosis?.path || [] }}
               theme={theme}
             />
           </main>
@@ -173,15 +194,15 @@ export default function App() {
           {stage === 'recommendation' ? (
             <DiagnosticPanel
               onResetScan={resetScan}
-              onStartDetour={() => {
-                setSelectedNodeId('fractions');
-              }}
+              onStartDetour={() => setSelectedNodeId(latestDiagnosis?.gapNode)}
+              diagnosis={latestDiagnosis}
+              allNodes={rawNodes}
               theme={theme}
             />
           ) : (
             <InsightPanel
               selectedNode={selectedNode}
-              allNodes={activeDataset.rawNodes}
+              allNodes={rawNodes}
               onClose={() => setSelectedNodeId(null)}
               theme={theme}
             />
