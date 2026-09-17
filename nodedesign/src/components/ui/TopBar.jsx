@@ -27,7 +27,8 @@ export default function TopBar({
   onToggleTheme,
   user,
   onOpenLogin,
-  onLogout
+  onLogout,
+  onOpenAnalytics,
 }) {
   const isScanning = stage !== 'idle' && stage !== 'recommendation';
   const isLight = theme === 'light';
@@ -67,7 +68,7 @@ export default function TopBar({
               isLight ? 'text-slate-900' : 'text-white'
             }`}
           >
-            🌳 CogniTree
+            CogniTree
           </span>
         </div>
       </div>
@@ -167,6 +168,16 @@ export default function TopBar({
           <Activity className={`w-3.5 h-3.5 ${isScanning ? 'animate-pulse' : ''}`} />
           <span className="hidden sm:inline">Cognitive Scan</span>
         </button>
+
+        {onOpenAnalytics && (
+          <button
+            onClick={onOpenAnalytics}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/60"
+          >
+            <Award className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Analytics</span>
+          </button>
+        )}
 
         {stage === 'recommendation' && (
           <button
