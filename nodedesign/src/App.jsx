@@ -1,17 +1,40 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import '@xyflow/react/dist/style.css';
+import ScrollHero from './components/hero/ScrollHero';
 import Graph from './components/graph/Graph';
 import InsightPanel from './components/panels/InsightPanel';
 import DiagnosticPanel from './components/panels/DiagnosticPanel';
 import CurriculumNav from './components/panels/CurriculumNav';
 import TopBar from './components/ui/TopBar';
+import LoginModal from './components/auth/LoginModal';
 import { useDiagnosticScan } from './hooks/useDiagnosticScan';
 import { useCurriculum } from './core/CurriculumContext';
 
 export default function App() {
+  // Meera's UI State
+  const [view, setView] = useState(() => {
+    if (window.location.hash === '#node-design') return 'nodedesign';
+    return 'hero';
+  });
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('cognitree_theme') || 'dark';
+  });
+
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState('signin');
+
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('cognitree_user');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { name: 'Alex Rivera', email: 'alex.rivera@cognitree.edu', role: 'Student' };
+  });
+
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   
-  // Person 1's Core Logic
+  // Person 1's Core Logic (Our Backend)
   const { graph, progress, diagnoses, answer } = useCurriculum();
   
   // Map Person 1's logic into Person 2's UI structure
@@ -29,7 +52,7 @@ export default function App() {
 
       return {
         ...n,
-        prerequisites: n.prereqs, // Map for Person 2's adapter
+        prerequisites: n.prereqs,
         mastery,
         status: uiStatus,
         attempts: p?.attempts || 0,
@@ -39,13 +62,65 @@ export default function App() {
     });
   }, [graph, progress]);
 
-  // Handle Diagnostic Animation State
+  // Meera's Event Handlers
+  useEffect(() => {
+    localStorage.setItem('cognitree_theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    localStorage.setItem('cognitree_user', JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('cognitree_user');
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#node-design') setView('nodedesign');
+      else if (window.location.hash === '#hero') setView('hero');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleExploreNodeDesign = () => {
+    if (!user) {
+      setLoginModalMode('signup');
+      setIsLoginOpen(true);
+      return;
+    }
+    window.location.hash = '#node-design';
+    setView('nodedesign');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handleBackToHero = () => {
+    window.location.hash = '#hero';
+    setView('hero');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const openSignIn = () => {
+    setLoginModalMode('signin');
+    setIsLoginOpen(true);
+  };
+
+  // Handle Diagnostic Animation State (Our Logic)
   const latestDiagnosis = diagnoses[0] || null;
   const diagnosticScan = useDiagnosticScan(latestDiagnosis?.path || []);
   const { stage, runScan, resetScan } = diagnosticScan;
   const lastScannedRef = React.useRef(null);
 
-  // Trigger animation automatically when a new diagnosis arrives
   useEffect(() => {
     if (latestDiagnosis && latestDiagnosis !== lastScannedRef.current && stage === 'idle') {
       lastScannedRef.current = latestDiagnosis;
@@ -63,48 +138,86 @@ export default function App() {
 
   // Demo helper: Simulate a wrong answer on the Area node
   const handleSimulateQuiz = () => {
-    // Faking a wrong answer on Area that blames Multiplication
     answer('area', 'area.q1', { id: 'b', text: '10', correct: false, blame: 'multiplication', reason: 'Added instead of multiplied' });
   };
 
   return (
-    <div className="w-screen h-screen flex bg-slate-950 overflow-hidden font-sans">
-      <CurriculumNav
-        topics={rawNodes}
-        selectedNodeId={selectedNodeId}
-        onSelectTopic={setSelectedNodeId}
-      />
-
-      <main className="flex-1 h-full relative overflow-hidden">
-        <TopBar
-          studentName="Hackathon Demo"
-          overallMastery={overallMastery}
-          stage={stage}
-          onRunScan={handleSimulateQuiz} // Overriding runScan with our real logic simulation
-          onResetScan={resetScan}
-        />
-        <Graph
-          curriculumNodes={rawNodes}
-          selectedNodeId={selectedNodeId}
-          onSelectNode={setSelectedNodeId}
-          diagnosticState={{ ...diagnosticScan, gapPath: latestDiagnosis?.path || [] }}
-        />
-      </main>
-
-      {stage === 'recommendation' ? (
-        <DiagnosticPanel
-          onResetScan={resetScan}
-          onStartDetour={() => setSelectedNodeId(latestDiagnosis?.gapNode)}
-          diagnosis={latestDiagnosis}
-          allNodes={rawNodes}
+    <>
+      {view === 'hero' ? (
+        <ScrollHero
+          onExploreNodeDesign={handleExploreNodeDesign}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          user={user}
+          onOpenLogin={openSignIn}
+          onLogout={handleLogout}
         />
       ) : (
-        <InsightPanel
-          selectedNode={selectedNode}
-          allNodes={rawNodes}
-          onClose={() => setSelectedNodeId(null)}
-        />
+        <div
+          className={`w-screen h-screen flex overflow-hidden font-sans relative transition-colors duration-300 ${
+            theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
+          }`}
+        >
+          {/* Left Curriculum Navigation Sidebar */}
+          <CurriculumNav
+            topics={rawNodes}
+            selectedNodeId={selectedNodeId}
+            onSelectTopic={setSelectedNodeId}
+            theme={theme}
+          />
+
+          {/* Middle Graph Area */}
+          <main className="flex-1 h-full relative overflow-hidden">
+            <TopBar
+              studentName={user ? user.name : "Hackathon Demo"}
+              overallMastery={overallMastery}
+              stage={stage}
+              onRunScan={handleSimulateQuiz}
+              onResetScan={resetScan}
+              onBackToHero={handleBackToHero}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              user={user}
+              onOpenLogin={openSignIn}
+              onLogout={handleLogout}
+            />
+            <Graph
+              curriculumNodes={rawNodes}
+              selectedNodeId={selectedNodeId}
+              onSelectNode={setSelectedNodeId}
+              diagnosticState={{ ...diagnosticScan, gapPath: latestDiagnosis?.path || [] }}
+              theme={theme}
+            />
+          </main>
+
+          {/* Right Panel: DiagnosticPanel on recommendation stage, InsightPanel otherwise */}
+          {stage === 'recommendation' ? (
+            <DiagnosticPanel
+              onResetScan={resetScan}
+              onStartDetour={() => setSelectedNodeId(latestDiagnosis?.gapNode)}
+              diagnosis={latestDiagnosis}
+              allNodes={rawNodes}
+              theme={theme}
+            />
+          ) : (
+            <InsightPanel
+              selectedNode={selectedNode}
+              allNodes={rawNodes}
+              onClose={() => setSelectedNodeId(null)}
+              theme={theme}
+            />
+          )}
+        </div>
       )}
-    </div>
+
+      {/* Authentication Login / Sign Up Modal */}
+      <LoginModal
+        isOpen={isLoginOpen}
+        initialMode={loginModalMode}
+        onClose={() => setIsLoginOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        theme={theme}
+      />
+    </>
   );
 }
