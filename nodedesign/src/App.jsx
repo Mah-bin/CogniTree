@@ -135,10 +135,6 @@ export default function App() {
 
   const selectedNode = rawNodes.find((n) => n.id === selectedNodeId) || null;
 
-  const handleSimulateQuiz = () => {
-    answer('area', 'area.q1', { id: 'b', text: '10', correct: false, blame: 'multiplication', reason: 'Added instead of multiplied' });
-  };
-
   return (
     <>
       {view === 'hero' ? (
@@ -168,7 +164,7 @@ export default function App() {
               studentName={user ? user.name : 'Hackathon Demo'}
               overallMastery={overallMastery}
               stage={stage}
-              onRunScan={handleSimulateQuiz}
+              onRunScan={runScan}
               onResetScan={resetScan}
               onBackToHero={handleBackToHero}
               theme={theme}
